@@ -1,0 +1,96 @@
+# Byte-compiled / optimized / DLL files
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+
+venv/
+env/
+ENV/
+.venv/
+
+# Environment variables (VERY IMPORTANT)
+
+.env
+.env.*
+*.env
+
+# Flask stuff
+
+instance/
+.webassets-cache
+
+# SQLAlchemy / DB
+
+*.db
+*.sqlite3
+
+# Logs
+
+*.log
+logs/
+
+# OS generated files
+
+.DS_Store
+Thumbs.db
+
+# IDE / Editor folders
+
+.vscode/
+.idea/
+
+# PyCharm
+
+*.iml
+
+# Testing
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution / packaging
+
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Migrations (optional: keep if you want versioned DB history)
+
+# migrations/
+
+# Jupyter Notebook
+
+.ipynb_checkpoints/
+
+# Temporary files
+
+*.tmp
+*.swp
+*~
+
+# Coverage reports
+
+coverage.xml
+
+# mypy
+
+.mypy_cache/
+
+# pyright
+
+.pyright/
+
+# Docker (if you use it)
+
+docker-compose.override.yml
+
+# Node (if frontend exists)
+
+node_modules/
+npm-debug.log
+yarn-error.log
