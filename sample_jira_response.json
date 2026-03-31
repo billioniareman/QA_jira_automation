@@ -1,0 +1,21 @@
+{
+  "startAt": 0,
+  "maxResults": 50,
+  "total": 1,
+  "issues": [
+    {
+      "key": "BOOK-101",
+      "fields": {
+        "summary": "User Registration Validation",
+        "description": "As a user, I want to register an account so I can book flights.",
+        "customfield_10000": "Email must be valid format.\nPassword must be at least 8 characters.\nUser should be able to submit form.\nCannot register with existing email.",
+        "components": [
+          {"name": "Passenger Details"}
+        ],
+        "status": {
+          "name": "To Do"
+        }
+      }
+    }
+  ]
+}
