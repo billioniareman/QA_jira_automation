@@ -1,7 +1,7 @@
 {
   "startAt": 0,
   "maxResults": 50,
-  "total": 1,
+  "total": 5,
   "issues": [
     {
       "key": "BOOK-101",
@@ -14,6 +14,62 @@
         ],
         "status": {
           "name": "To Do"
+        }
+      }
+    },
+    {
+      "key": "BOOK-102",
+      "fields": {
+        "summary": "Flight Search Functionality",
+        "description": "As a user, I want to search for flights using origin, destination, and dates so I can find available flights.",
+        "customfield_10000": "Origin and destination must be different.\nDeparture date cannot be in the past.\nReturn date must be equal or after departure date.\nMust show 'No flights found' if no flights match criteria.",
+        "components": [
+          {"name": "Search Engine"}
+        ],
+        "status": {
+          "name": "In Progress"
+        }
+      }
+    },
+    {
+      "key": "BOOK-103",
+      "fields": {
+        "summary": "Payment Processing via Credit Card",
+        "description": "As a user, I want to pay for my booking using a credit card so I can complete my flight purchase.",
+        "customfield_10000": "Credit card number must pass Luhn algorithm check.\nExpiration date must be in the future.\nCVV must be 3 or 4 digits.\nShow success message on approved payment.\nShow error message on declined payment.",
+        "components": [
+          {"name": "Payment Gateway"}
+        ],
+        "status": {
+          "name": "Done"
+        }
+      }
+    },
+    {
+      "key": "BOOK-104",
+      "fields": {
+        "summary": "Booking Confirmation Email",
+        "description": "As a user, I want to receive a confirmation email after booking so I have a record of my flight details.",
+        "customfield_10000": "Email must be sent immediately after successful payment.\nEmail must contain booking reference number.\nEmail must include passenger list and flight schedule.",
+        "components": [
+          {"name": "Notification System"}
+        ],
+        "status": {
+          "name": "To Do"
+        }
+      }
+    },
+    {
+      "key": "BOOK-105",
+      "fields": {
+        "summary": "User Profile Management",
+        "description": "As a registered user, I want to edit my profile details so my information is up to date.",
+        "customfield_10000": "First name and last name are required.\nPhone number must contain only digits and optional '+' sign.\nUser can upload a profile picture.",
+        "components": [
+          {"name": "Passenger Details"}
+        ],
+        "status": {
+          "name": "In Review"
         }
       }
     }
