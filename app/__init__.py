@@ -1,20 +1,14 @@
-from flask import Flask
-from config import Config
-from app.extensions import db, migrate
+from fastapi import FastAPI
 
-def create_app(config_class=Config):
-    app = Flask(__name__)
-    app.config.from_object(config_class)
+from config import settings
+from app.routes.endpoints import api_router
 
-    # Initialize Flask extensions
-    db.init_app(app)
-    migrate.init_app(app, db)
+def create_app():
+    app = FastAPI(title=settings.APP_NAME)
 
-    # Register blueprints
-    from app.routes.endpoints import api_bp
-    app.register_blueprint(api_bp, url_prefix='/api/v1')
+    app.include_router(api_router, prefix=settings.API_PREFIX)
 
-    # Import models so Alembic can discover them
-    from app import models
+    # Import models so Alembic can discover metadata
+    from app import models  # noqa: F401
 
     return app

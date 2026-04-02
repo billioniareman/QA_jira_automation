@@ -1,14 +1,17 @@
-from app.extensions import db
+from sqlalchemy import Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-class EntityLink(db.Model):
+from app.db import Base
+
+class EntityLink(Base):
     __tablename__ = 'entity_links'
 
-    id = db.Column(db.Integer, primary_key=True)
-    from_type = db.Column(db.String(50), nullable=False)  # story/rule/frontend_signal
-    from_id = db.Column(db.Integer, nullable=False)
-    relation = db.Column(db.String(50), nullable=False)  # has_rule, derived_from
-    to_type = db.Column(db.String(50), nullable=False)
-    to_id = db.Column(db.Integer, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    from_type: Mapped[str] = mapped_column(String(50), nullable=False)  # story/rule/frontend_signal
+    from_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    relation: Mapped[str] = mapped_column(String(50), nullable=False)  # has_rule, derived_from
+    to_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    to_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
     def to_dict(self):
         return {

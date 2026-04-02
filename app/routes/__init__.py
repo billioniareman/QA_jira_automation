@@ -1,1 +1,1 @@
-from .endpoints import api_bp
+from .endpoints import api_router
