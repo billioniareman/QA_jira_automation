@@ -13,6 +13,8 @@ class Story(db.Model):
     feature = db.Column(db.String(100), index=True, nullable=True)
     status = db.Column(db.String(50), nullable=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_indexed = db.Column(db.Boolean, default=False)
+    last_indexed_at = db.Column(db.DateTime, nullable=True)
 
     def to_dict(self):
         return {
@@ -24,5 +26,7 @@ class Story(db.Model):
             'module': self.module,
             'feature': self.feature,
             'status': self.status,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'is_indexed': self.is_indexed,
+            'last_indexed_at': self.last_indexed_at.isoformat() if self.last_indexed_at else None
         }

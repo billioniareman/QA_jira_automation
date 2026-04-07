@@ -4,6 +4,7 @@ from app.services.jira_service import ingest_jira_issues
 from app.models.story import Story
 from app.models.rule import Rule
 from app.models.entity_link import EntityLink
+from app.services.azure_search_service import sync_dirty_rules_to_azure, search_rules, create_index_if_not_exists
 
 api_bp = Blueprint('api', __name__)
 
@@ -55,3 +56,31 @@ def get_rules():
         
     rules = query.all()
     return jsonify([rule.to_dict() for rule in rules]), 200
+
+@api_bp.route('/sync', methods=['POST'])
+def trigger_azure_sync():
+    """
+    Provisions index (if missing) and pushes dirty rules to Azure AI Search.
+    """
+    create_index_if_not_exists()
+    synced_count = sync_dirty_rules_to_azure()
+    if isinstance(synced_count, int):
+        return jsonify({"status": "success", "synced_rules": synced_count}), 200
+    return jsonify({"status": "error", "message": "Check server logs or missing credentials"}), 500
+
+@api_bp.route('/search', methods=['GET'])
+def search_knowledge():
+    """
+    Hybrid Search for rules utilizing keyword and sentence-transformers vectors.
+    """
+    query = request.args.get('q')
+    module_filter = request.args.get('module')
+    
+    if not query:
+        return jsonify({"error": "Query parameter 'q' is required."}), 400
+
+    results = search_rules(query, module_filter)
+    if isinstance(results, dict) and "error" in results:
+        return jsonify(results), 500
+        
+    return jsonify({"results": results}), 200
