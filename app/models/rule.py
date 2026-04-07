@@ -12,6 +12,8 @@ class Rule(db.Model):
     verification_status = db.Column(db.String(50), default='candidate')  # candidate/verified
     confidence = db.Column(db.Float, default=1.0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_indexed = db.Column(db.Boolean, default=False)
+    last_indexed_at = db.Column(db.DateTime, nullable=True)
 
     def to_dict(self):
         return {
@@ -22,5 +24,7 @@ class Rule(db.Model):
             'source_ref': self.source_ref,
             'verification_status': self.verification_status,
             'confidence': self.confidence,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'is_indexed': self.is_indexed,
+            'last_indexed_at': self.last_indexed_at.isoformat() if self.last_indexed_at else None
         }
