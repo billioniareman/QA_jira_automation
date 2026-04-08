@@ -1,13 +1,16 @@
-from app.extensions import db
+from sqlalchemy import Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
-class FrontendSignal(db.Model):
+from app.db import Base
+
+class FrontendSignal(Base):
     __tablename__ = 'frontend_signals'
 
-    id = db.Column(db.Integer, primary_key=True)
-    repo = db.Column(db.String(255), nullable=True)
-    file_path = db.Column(db.String(500), nullable=True)
-    artifact_type = db.Column(db.String(100), nullable=True)
-    extracted_text = db.Column(db.Text, nullable=True)
-    route = db.Column(db.String(255), nullable=True)
-    component = db.Column(db.String(255), nullable=True)
-    commit_sha = db.Column(db.String(100), nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    repo: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    artifact_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    route: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    component: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    commit_sha: Mapped[str | None] = mapped_column(String(100), nullable=True)

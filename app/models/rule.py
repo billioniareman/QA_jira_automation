@@ -1,19 +1,27 @@
-from datetime import datetime
-from app.extensions import db
+from datetime import datetime, timezone
+from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
-class Rule(db.Model):
+from app.db import Base
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class Rule(Base):
     __tablename__ = 'rules'
 
-    id = db.Column(db.Integer, primary_key=True)
-    rule_text = db.Column(db.Text, nullable=False)
-    rule_type = db.Column(db.String(50), nullable=False)  # validation/business
-    source_type = db.Column(db.String(50), nullable=False)  # jira/frontend
-    source_ref = db.Column(db.String(255), nullable=True)  # jira_key or file path
-    verification_status = db.Column(db.String(50), default='candidate')  # candidate/verified
-    confidence = db.Column(db.Float, default=1.0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_indexed = db.Column(db.Boolean, default=False)
-    last_indexed_at = db.Column(db.DateTime, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    rule_text: Mapped[str] = mapped_column(Text, nullable=False)
+    rule_type: Mapped[str] = mapped_column(String(50), nullable=False)  # validation/business
+    source_type: Mapped[str] = mapped_column(String(50), nullable=False)  # jira/frontend
+    source_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)  # jira_key or file path
+    verification_status: Mapped[str] = mapped_column(String(50), default='candidate')  # candidate/verified
+    confidence: Mapped[float] = mapped_column(Float, default=1.0)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=_utcnow)
+    is_indexed: Mapped[bool] = mapped_column(Boolean, default=False)
+    last_indexed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     def to_dict(self):
         return {
@@ -26,5 +34,5 @@ class Rule(db.Model):
             'confidence': self.confidence,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'is_indexed': self.is_indexed,
-            'last_indexed_at': self.last_indexed_at.isoformat() if self.last_indexed_at else None
+            'last_indexed_at': self.last_indexed_at.isoformat() if self.last_indexed_at else None,
         }
