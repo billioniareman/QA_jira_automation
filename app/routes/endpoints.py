@@ -22,16 +22,13 @@ api_router = APIRouter()
 # ── Jira ingestion ────────────────────────────────────────────────────────
 
 @api_router.post('/ingest/jira')
-def trigger_jira_ingestion():
+def trigger_jira_ingestion(
+    jql_query: Optional[str] = Query(default=None, description="Optional JQL to filter issues")
+):
     """
-    Triggers the ingestion of Jira issues.
-    For local testing, we inject the path to sample data.
+    Triggers the ingestion of live Jira issues.
     """
-    sample_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-        'sample_jira_response.json',
-    )
-    result = ingest_jira_issues(sample_data_path=sample_path)
+    result = ingest_jira_issues(jql_query=jql_query)
 
     if result.get("status") == "success":
         return result

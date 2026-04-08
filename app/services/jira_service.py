@@ -1,5 +1,6 @@
 import json
 import logging
+import requests
 from sqlalchemy import select
 
 from app.db import SessionLocal
@@ -8,24 +9,45 @@ from app.models.rule import Rule
 from app.models.entity_link import EntityLink
 from app.services.mapping import map_jira_to_module_feature
 from app.services.rule_engine import extract_rules
+from config import settings
 
 logger = logging.getLogger(__name__)
 
-def ingest_jira_issues(sample_data_path=None):
+def ingest_jira_issues(jql_query=None):
     """
     Ingests Jira issues, maps them to module/feature, extracts rules,
     and saves them to the database.
-    Using local sample JSON for now as per user instruction.
+    Fetches live data from the configured Jira server.
     """
     db = SessionLocal()
     try:
-        if sample_data_path:
-            with open(sample_data_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        else:
-            # Simulate fetching from API fallback
-            data = {"issues": []}
+        base_url = settings.JIRA_BASE_URL.rstrip('/')
+        auth = (settings.JIRA_USERNAME, settings.JIRA_API_TOKEN)
+        
+        # 1. Dynamically find the custom field ID for "Acceptance Criteria"
+        ac_field_id = "customfield_10000" # Fallback
+        fields_url = f"{base_url}/rest/api/2/field"
+        fields_response = requests.get(fields_url, auth=auth)
+        if fields_response.status_code == 200:
+            for field in fields_response.json():
+                if field.get("name", "").lower() == "acceptance criteria":
+                    ac_field_id = field.get("id")
+                    break
 
+        # 2. Fetch Issues
+        search_url = f"{base_url}/rest/api/2/search/jql"
+        jql = jql_query if jql_query else "project IS NOT EMPTY ORDER BY created DESC"
+        params = {"jql": jql, "maxResults": 50, "fields": "*all"}
+        
+        logger.info(f"Fetching Jira issues with JQL: {jql}")
+        response = requests.get(search_url, auth=auth, params=params)
+        
+        if response.status_code != 200:
+            error_msg = f"Failed to fetch from Jira (Status {response.status_code}): {response.text}"
+            logger.error(error_msg)
+            return {"status": "error", "message": error_msg}
+
+        data = response.json()
         issues = data.get('issues', [])
         saved_stories_count = 0
         saved_rules_count = 0
@@ -35,8 +57,10 @@ def ingest_jira_issues(sample_data_path=None):
             fields = issue.get('fields', {})
             summary = fields.get('summary', '')
             description = fields.get('description', '')
-            # Using customfield_10000 to represent acceptance criteria in our sample
-            acceptance_criteria = fields.get('customfield_10000', description)
+            # Getting dynamically found acceptance criteria field
+            acceptance_criteria = fields.get(ac_field_id)
+            if not acceptance_criteria:
+                acceptance_criteria = description
 
             module, feature = map_jira_to_module_feature(issue)
 
