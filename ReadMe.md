@@ -1,48 +1,198 @@
-QA Knowledge Platform Phase 1 - Code Walkthrough
-This document outlines the backend foundation for your QA Knowledge Platform. The core logic is now built in Python with FastAPI, PostgreSQL, SQLAlchemy, and Alembic.
+## QA Knowledge Platform
 
-Implementation Delivered
-The project foundation is implemented in this repository.
+Production-oriented backend for Jira ingestion, rule extraction, semantic retrieval, and AI chat orchestration.
 
-1. Database & ORM Setup
-Using Alembic, the schema can be fully migrated from our model definitions. The app/models/ directory implements:
+### Current implementation status
 
-Story: Records Jira issues.
-Rule: Structures extracted behaviors along with validation rules.
-FrontendSignal: Built as requested for future frontend parsing steps.
-EntityLink: Creates lineage tracking from Jira Story to extracted Rule.
-2. Services
-Rule Engine: Parses the acceptance criteria using heuristic delimiters, spotting keywords like must, valid, cannot, etc., converting free text to structured validation/business constraint rules.
-Mapping Service: Defines standard static dictionaries aligning Jira components (e.g., Passenger Details) to Application Modules (Booking).
-Jira Service: Contains the ingest_jira_issues() workflow. It pulls our sample_jira_response.json, cascades data through mapping, rule extraction, and properly transacts the records into the database with lineage mapping.
-3. Endpoints
-Three primary RESTful endpoints are available under /api/v1:
+- Core ingestion platform: **Implemented**
+- Chat persistence schema (threads/messages/artifacts/checkpoints): **Implemented**
+- LangGraph orchestration (Phase 2): **Implemented**
+- Azure AI Search tool integration in orchestration: **Implemented**
+- Jira action tools (create/update/comment/transition): **Planned (next phase)**
+- Chat API endpoints: **Planned (next phase)**
 
-POST /api/v1/ingest/jira: Pulls the sample JQL data and executes the full extraction logic locally.
-GET /api/v1/stories/<jira_key>: Returns nested records mapping a story linearly to its extracted rules.
-GET /api/v1/rules/: Standard query endpoint for generated rules.
-Local Testing Instructions
-You can set up and run locally with the commands below.
+---
 
-# 1) Create and activate virtual environment
+## Tech stack
+
+- FastAPI + Uvicorn
+- PostgreSQL + SQLAlchemy + Alembic
+- LangGraph + LangChain
+- Azure OpenAI
+- Azure AI Search (hybrid vector + keyword search)
+- Langfuse (observability-ready)
+
+---
+
+## Core modules
+
+### 1) Existing QA knowledge platform modules
+
+- `Story`: Jira story persistence
+- `Rule`: extracted business/validation rules
+- `FrontendSignal`: frontend signal model
+- `EntityLink`: story↔rule lineage
+
+Services:
+- `jira_service.py`: sample Jira ingestion flow
+- `rule_engine.py`: acceptance criteria parsing and rule extraction
+- `mapping.py`: Jira component → module/feature mapping
+- `azure_search_service.py`: Azure AI Search indexing + retrieval
+
+### 2) Chat agent extension modules
+
+Persistence:
+- `app/models/chat/thread.py`
+	- `ChatThread`
+	- `ChatMessage`
+	- `ChatArtifact`
+	- `ChatCheckpoint`
+- Migration: `migrations/versions/f1a2b3c4d5e6_add_chat_schema.py`
+
+Orchestration:
+- `app/orchestration/state.py`: `AgentState`, `Intent`, `ToolCall`
+- `app/orchestration/routing.py`: intent classification
+- `app/orchestration/nodes.py`: routing/planning/tool execution/response nodes
+- `app/orchestration/graph.py`: LangGraph assembly and execution
+
+Tools:
+- `app/tools/base.py`: base tool + registry
+- `app/tools/azure_ai_search.py`: Azure AI Search chat tool
+- `app/tools/registry.py`: default tool registration
+
+Guardrails:
+- input/output validation
+- rate limiting
+- tool-call limits per thread
+
+---
+
+## Azure AI Search integration (included)
+
+The orchestration layer can call `azure_ai_search` to retrieve rules/knowledge using your existing Azure Search implementation.
+
+Required environment variables:
+
+- `AZURE_SEARCH_ENDPOINT`
+- `AZURE_SEARCH_API_KEY`
+- `AZURE_SEARCH_INDEX_NAME`
+
+Optional runtime setup:
+
+- call `create_index_if_not_exists()` once during bootstrap
+- call `sync_dirty_rules_to_azure(db)` after ingestion jobs
+
+---
+
+## Existing API endpoints
+
+Current endpoints under `/api/v1`:
+
+- `POST /ingest/jira`
+- `GET /stories/{jira_key}`
+- `GET /rules/`
+
+> Chat API endpoints are not yet wired; those are part of the next phase.
+
+---
+
+## Local setup
+
+### 1) Create and activate environment
+
+```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate
+```
 
-# 2) Install dependencies
+### 2) Install dependencies
+
+```bash
 pip install -r requirements.txt
+```
 
-# 3) Configure PostgreSQL
-# Ensure DATABASE_URL is set in .env or environment.
+### 3) Configure environment
 
-# 4) Run migrations
+Use `.env.example` (local) or `.env.azure.example` (Azure deployment) and set:
+
+- `DATABASE_URL`
+- Jira credentials
+- Azure OpenAI settings
+- Azure AI Search settings
+
+### 4) Run migrations
+
+```bash
 alembic -c migrations/alembic.ini upgrade head
+```
 
-# 5) Run API
+### 5) Start API
+
+```bash
 python main.py
-Then, try out the triggers:
+```
 
-Initialize mock JSON payload into DB:
+Server starts on `http://127.0.0.1:5000`.
+
+---
+
+## Quick validation
+
+Ingest sample data:
+
+```bash
 curl -X POST http://127.0.0.1:5000/api/v1/ingest/jira
+```
 
-Validate ingested story:
+Fetch one story:
+
+```bash
 curl http://127.0.0.1:5000/api/v1/stories/BOOK-101
+```
+
+---
+
+## Branch workflow (rebase on latest main)
+
+Use this flow before opening or updating a PR so your branch sits on top of current `main`.
+
+```bash
+# 0) Ensure you are on your feature branch
+git switch <feature-branch>
+
+# 1) If you have uncommitted changes, stash them (including untracked files)
+git stash push -u -m "pre-rebase"
+
+# 2) Pull latest refs from remote
+git fetch origin
+
+# 3) Rebase your branch onto latest main
+git rebase origin/main
+
+# 4) Re-apply your local uncommitted work
+git stash pop
+```
+
+If conflicts occur during rebase or stash pop, resolve conflicts, then continue with:
+
+```bash
+git add <resolved-files>
+git rebase --continue
+```
+
+After a successful rebase, update your remote branch safely with:
+
+```bash
+git push --force-with-lease
+```
+
+---
+
+## Additional docs
+
+- `CHAT_ARCHITECTURE.md`
+- `DEVELOPER_GUIDE.md`
+- `QUICK_REFERENCE.md`
+- `IMPLEMENTATION_SUMMARY.md`
+- `DELIVERY_SUMMARY.md`
+- `FILE_INDEX.md`

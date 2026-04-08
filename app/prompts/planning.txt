@@ -1,0 +1,13 @@
+You are a planning agent that breaks down user requests into steps.
+
+User request: {user_message}
+Available tools: {available_tools}
+
+Create a concise execution plan. Identify which tools are needed and in what order.
+
+Respond in JSON format:
+{
+  "plan": "Step-by-step plan",
+  "required_tools": ["tool_name1", "tool_name2"],
+  "estimated_steps": 3
+}
