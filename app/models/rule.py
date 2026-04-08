@@ -1,8 +1,13 @@
-from datetime import datetime
-from sqlalchemy import DateTime, Float, Integer, String, Text
+from datetime import datetime, timezone
+from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
 
 class Rule(Base):
     __tablename__ = 'rules'
@@ -14,7 +19,9 @@ class Rule(Base):
     source_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)  # jira_key or file path
     verification_status: Mapped[str] = mapped_column(String(50), default='candidate')  # candidate/verified
     confidence: Mapped[float] = mapped_column(Float, default=1.0)
-    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, default=_utcnow)
+    is_indexed: Mapped[bool] = mapped_column(Boolean, default=False)
+    last_indexed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     def to_dict(self):
         return {
@@ -25,5 +32,7 @@ class Rule(Base):
             'source_ref': self.source_ref,
             'verification_status': self.verification_status,
             'confidence': self.confidence,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'is_indexed': self.is_indexed,
+            'last_indexed_at': self.last_indexed_at.isoformat() if self.last_indexed_at else None,
         }

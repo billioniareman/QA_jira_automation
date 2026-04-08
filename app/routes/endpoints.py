@@ -10,8 +10,16 @@ from app.models.story import Story
 from app.models.rule import Rule
 from app.models.entity_link import EntityLink
 from app.services.jira_service import ingest_jira_issues
+from app.services.azure_search_service import (
+    create_index_if_not_exists,
+    search_rules,
+    sync_dirty_rules_to_azure,
+)
 
 api_router = APIRouter()
+
+
+# ── Jira ingestion ────────────────────────────────────────────────────────
 
 @api_router.post('/ingest/jira')
 def trigger_jira_ingestion():
@@ -19,13 +27,18 @@ def trigger_jira_ingestion():
     Triggers the ingestion of Jira issues.
     For local testing, we inject the path to sample data.
     """
-    # Using local mock data since Phase 1 doesn't have live Jira connection configured
-    sample_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'sample_jira_response.json')
+    sample_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+        'sample_jira_response.json',
+    )
     result = ingest_jira_issues(sample_data_path=sample_path)
-    
+
     if result.get("status") == "success":
         return result
     raise HTTPException(status_code=500, detail=result)
+
+
+# ── Story detail ──────────────────────────────────────────────────────────
 
 @api_router.get('/stories/{jira_key}')
 def get_story(jira_key: str, db: Session = Depends(get_db)):
@@ -35,8 +48,7 @@ def get_story(jira_key: str, db: Session = Depends(get_db)):
     story = db.execute(select(Story).where(Story.jira_key == jira_key)).scalar_one_or_none()
     if story is None:
         raise HTTPException(status_code=404, detail='Story not found')
-    
-    # Fetch linked rules via entity_links
+
     links = db.execute(
         select(EntityLink).where(
             EntityLink.from_type == 'story',
@@ -46,15 +58,18 @@ def get_story(jira_key: str, db: Session = Depends(get_db)):
         )
     ).scalars().all()
     rule_ids = [link.to_id for link in links]
-    
+
     rules = []
     if rule_ids:
         rules = db.execute(select(Rule).where(Rule.id.in_(rule_ids))).scalars().all()
-    
+
     story_data = story.to_dict()
     story_data['rules'] = [rule.to_dict() for rule in rules]
-    
+
     return story_data
+
+
+# ── Rules list / filter ───────────────────────────────────────────────────
 
 @api_router.get('/rules')
 def get_rules(
@@ -70,6 +85,41 @@ def get_rules(
         query = query.where(Rule.source_ref == source_ref)
     if rule_type:
         query = query.where(Rule.rule_type == rule_type)
-        
+
     rules = db.execute(query).scalars().all()
     return [rule.to_dict() for rule in rules]
+
+
+# ── Azure AI Search sync ─────────────────────────────────────────────────
+
+@api_router.post('/sync')
+def trigger_azure_sync(db: Session = Depends(get_db)):
+    """
+    Provisions the Azure AI Search index (if missing) and pushes
+    un-indexed rules.
+    """
+    create_index_if_not_exists()
+    synced_count = sync_dirty_rules_to_azure(db)
+    if isinstance(synced_count, int):
+        return {"status": "success", "synced_rules": synced_count}
+    raise HTTPException(
+        status_code=500,
+        detail="Check server logs or missing Azure credentials",
+    )
+
+
+# ── Hybrid search ─────────────────────────────────────────────────────────
+
+@api_router.get('/search')
+def search_knowledge(
+    q: str = Query(..., description="Search query text"),
+    module: Optional[str] = Query(default=None, description="Filter by module"),
+):
+    """
+    Hybrid keyword + vector search for rules via Azure AI Search.
+    """
+    results = search_rules(q, module)
+    if isinstance(results, dict) and "error" in results:
+        raise HTTPException(status_code=500, detail=results["error"])
+
+    return {"results": results}
