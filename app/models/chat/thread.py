@@ -1,12 +1,16 @@
 """Chat-related SQLAlchemy models."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import Column, String, Integer, Text, DateTime, Boolean, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 
 from app.db import Base
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class ChatThread(Base):
@@ -19,8 +23,8 @@ class ChatThread(Base):
     user_id = Column(String(255), index=True, nullable=False)  # External user ID
     title = Column(String(255), nullable=True)  # Auto-generated or user-provided
     status = Column(String(50), default='active', nullable=False)  # active, archived, deleted
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=_utcnow, nullable=False)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow, nullable=False)
     metadata_json = Column(JSON, nullable=True)  # Additional thread metadata
 
     # Relationships
@@ -41,7 +45,7 @@ class ChatMessage(Base):
     content = Column(Text, nullable=False)
     tokens_in = Column(Integer, nullable=True)  # Token count for LLM input
     tokens_out = Column(Integer, nullable=True)  # Token count for LLM output
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=_utcnow, nullable=False)
     metadata_json = Column(JSON, nullable=True)  # Tool calls, routing info, etc.
 
     # Relationships
@@ -60,7 +64,7 @@ class ChatArtifact(Base):
     size_bytes = Column(Integer, nullable=False)
     compressed = Column(Boolean, default=False)
     data = Column(Text, nullable=False)  # JSON or gzipped data
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=_utcnow, nullable=False)
     metadata_json = Column(JSON, nullable=True)  # Version, source, etc.
 
     # Relationships
@@ -80,7 +84,7 @@ class ChatCheckpoint(Base):
     graph_state_json = Column(JSON, nullable=False)  # Serialized LangGraph state
     status = Column(String(50), default='pending', nullable=False)  # pending, completed, failed
     error_message = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=_utcnow, nullable=False)
 
     # Relationships
     thread = relationship('ChatThread', back_populates='checkpoints')

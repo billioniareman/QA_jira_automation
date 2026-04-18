@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -19,16 +18,25 @@ from app.services.azure_search_service import (
 api_router = APIRouter()
 
 
+# ── Health check ───────────────────────────────────────────────────────────
+
+@api_router.get('/health', tags=['ops'])
+def health_check():
+    """Lightweight liveness probe."""
+    return {"status": "ok"}
+
+
 # ── Jira ingestion ────────────────────────────────────────────────────────
 
 @api_router.post('/ingest/jira')
 def trigger_jira_ingestion(
-    jql_query: Optional[str] = Query(default=None, description="Optional JQL to filter issues")
+    jql_query: Optional[str] = Query(default=None, description="Optional JQL to filter issues"),
+    db: Session = Depends(get_db),
 ):
     """
     Triggers the ingestion of live Jira issues.
     """
-    result = ingest_jira_issues(jql_query=jql_query)
+    result = ingest_jira_issues(db, jql_query=jql_query)
 
     if result.get("status") == "success":
         return result

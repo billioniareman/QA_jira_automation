@@ -44,5 +44,5 @@ ENV PYTHONUNBUFFERED=1
 ENV ENVIRONMENT=production
 ENV DEBUG=false
 
-# Run migrations and start app
-CMD ["sh", "-c", "alembic upgrade head && gunicorn --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:5000 main:app"]
+# Start app
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000", "--workers", "4"]

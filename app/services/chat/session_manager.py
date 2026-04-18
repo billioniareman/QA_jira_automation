@@ -1,7 +1,7 @@
 """Session and thread management for chat."""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 
 from sqlalchemy.orm import Session as DBSession
@@ -34,7 +34,7 @@ class SessionManager:
         thread = ChatThread(
             thread_id=thread_id,
             user_id=user_id,
-            title=title or f'Chat {datetime.utcnow().strftime("%Y-%m-%d %H:%M")}',
+            title=title or f'Chat {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")}',
             status='active',
         )
         db.add(thread)
@@ -90,7 +90,7 @@ class SessionManager:
         thread = SessionManager.get_thread(db, thread_id)
         if thread:
             thread.status = 'archived'
-            thread.updated_at = datetime.utcnow()
+            thread.updated_at = datetime.now(timezone.utc)
             db.commit()
             db.refresh(thread)
         return thread
@@ -101,7 +101,7 @@ class SessionManager:
         thread = SessionManager.get_thread(db, thread_id)
         if thread:
             thread.status = 'deleted'
-            thread.updated_at = datetime.utcnow()
+            thread.updated_at = datetime.now(timezone.utc)
             db.commit()
             return True
         return False

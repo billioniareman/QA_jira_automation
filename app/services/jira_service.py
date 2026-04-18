@@ -1,9 +1,8 @@
-import json
 import logging
 import requests
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from app.db import SessionLocal
 from app.models.story import Story
 from app.models.rule import Rule
 from app.models.entity_link import EntityLink
@@ -13,13 +12,16 @@ from config import settings
 
 logger = logging.getLogger(__name__)
 
-def ingest_jira_issues(jql_query=None):
+
+def ingest_jira_issues(db: Session, jql_query: str | None = None):
     """
     Ingests Jira issues, maps them to module/feature, extracts rules,
     and saves them to the database.
-    Fetches live data from the configured Jira server.
+
+    Args:
+        db: SQLAlchemy session (provided by FastAPI Depends).
+        jql_query: Optional JQL filter.
     """
-    db = SessionLocal()
     try:
         base_url = settings.JIRA_BASE_URL.rstrip('/')
         auth = (settings.JIRA_USERNAME, settings.JIRA_API_TOKEN)
@@ -121,5 +123,3 @@ def ingest_jira_issues(jql_query=None):
         db.rollback()
         logger.error(f"Error during ingestion: {str(e)}")
         return {"status": "error", "message": str(e)}
-    finally:
-        db.close()
