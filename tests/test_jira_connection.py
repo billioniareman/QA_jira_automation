@@ -73,7 +73,7 @@ def test_jira_connection() -> int:
         )
 
         # 2) Validate issue read access with a small JQL search
-        search_url = f"{base_url}/rest/api/2/search"
+        search_url = f"{base_url}/rest/api/3/search/jql"
         params = {
             "jql": "project IS NOT EMPTY ORDER BY created DESC",
             "maxResults": 1,

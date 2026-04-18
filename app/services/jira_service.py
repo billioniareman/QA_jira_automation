@@ -28,7 +28,7 @@ def ingest_jira_issues(db: Session, jql_query: str | None = None):
         
         # 1. Dynamically find the custom field ID for "Acceptance Criteria"
         ac_field_id = "customfield_10000" # Fallback
-        fields_url = f"{base_url}/rest/api/2/field"
+        fields_url = f"{base_url}/rest/api/3/field"
         fields_response = requests.get(fields_url, auth=auth)
         if fields_response.status_code == 200:
             for field in fields_response.json():
@@ -37,7 +37,7 @@ def ingest_jira_issues(db: Session, jql_query: str | None = None):
                     break
 
         # 2. Fetch Issues
-        search_url = f"{base_url}/rest/api/2/search/jql"
+        search_url = f"{base_url}/rest/api/3/search/jql"
         jql = jql_query if jql_query else "project IS NOT EMPTY ORDER BY created DESC"
         params = {"jql": jql, "maxResults": 50, "fields": "*all"}
         
